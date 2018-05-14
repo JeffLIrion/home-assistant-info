@@ -1,0 +1,12 @@
+# Set the volume for Google Home and Google Mini devices when group playback is stopped and update the volume trackers for all group members
+
+- id: group_playback_stop
+  alias: "CCA: Group playback (stop)"
+  trigger:
+  - platform: state
+    entity_id: media_player.all_my_speakers, media_player.kitchen_speakers
+    to: 'off'
+  action:
+  - service: python_script.set_chromecast_volumes
+    data_template:
+      entity_id: media_player.kitchen_home

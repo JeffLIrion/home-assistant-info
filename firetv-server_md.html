@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Information about my Home-Assistant setup">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="https://jefflirion.github.io/stylesheets/stylesheet.css">
+
+    <title>Home-Assistant Info</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="home_banner" href="https://jefflirion.github.io/">JeffLIrion.github.io</a>
+          <a id="repo_banner" href="https://github.com/JeffLIrion/home-assistant-info">View this repo</a>
+
+          <h1 id="project_title">Home-Assistant Info</h1>
+          <h2 id="project_tagline">Fire TV integration in Hass.io</h2>
+        </header>
+    </div>
+    
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+        <p>I’ve got 2 Fire TV sticks that I can control via Home Assistant. Here’s how I got them setup and stable in <a href="http://Hass.io">Hass.io</a>.</p>
+<p>I used gollo’s firetv-server addon from here: <a href="https://github.com/gollo/hassio-addons">http://github.com/gollo/hassio-addons</a>. My addon configuration looks like this:</p>
+<pre><code class="language-json">{
+  "<span class="hljs-attribute">devices</span>": <span class="hljs-value">[
+    {
+      "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"bedroom"</span></span>,
+      "<span class="hljs-attribute">host</span>": <span class="hljs-value"><span class="hljs-string">"x.x.x.x"</span></span>,
+      "<span class="hljs-attribute">port</span>": <span class="hljs-value"><span class="hljs-number">5555</span>
+    </span>},
+    {
+      "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"livingroom"</span></span>,
+      "<span class="hljs-attribute">host</span>": <span class="hljs-value"><span class="hljs-string">"x.x.x.x"</span></span>,
+      "<span class="hljs-attribute">port</span>": <span class="hljs-value"><span class="hljs-number">5555</span>
+    </span>}
+  ]
+</span>}
+</code></pre>
+<p>My Home Assistant configuration looks like:</p>
+<pre><code class="language-yaml">media_player:
+- platform: firetv
+  host: 0.0.0.0
+  port: 5556
+  device: bedroom
+  name: Fire TV (Bedroom)
+
+- platform: firetv
+  host: 0.0.0.0
+  port: 5556
+  device: livingroom
+  name: Fire TV (Living Room)
+</code></pre>
+<p>The problem is that the Fire TV server will occasionally crash. To fix this, I created an automation that will restart the addon when the server crashes. First, I defined a sensor to track error messages from the addon, like this:</p>
+<pre><code class="language-yaml">- platform: command_line
+  name: firetv
+  command: &quot;grep -o 'Update for media_player\\.fire_tv_.*room fails' /config/home-assistant.log | wc -l&quot;
+</code></pre>
+<p>Next, I created an automation that is triggered when this sensor’s value changes. Since the addon has a hyphen in its name, using <code>hassio.addon_restart</code> doesn’t work, so I had to define a rest command instead:</p>
+<pre><code class="language-yaml">rest_command:
+  firetv_server_restart:
+    url: http://hassio/addons/d63e7be5_firetv-server/restart
+    method: 'post'
+</code></pre>
+<p>With this in place, I defined the automation as follows:</p>
+<pre><code class="language-yaml">- id: firetv_server_restart
+  alias: FireTV Server Restart
+  trigger:
+  - platform: state
+    entity_id: sensor.firetv
+  action:
+  - service: rest_command.firetv_server_restart
+  - service: automation.turn_off
+    entity_id: automation.firetv_server_restart
+  - delay: '00:05:00'
+  - service: automation.turn_on
+    entity_id: automation.firetv_server_restart
+</code></pre>
+<p>And that’s it! The two Fire TV sticks are successfully integrated into Home Assistant, and the server will restart whenever it crashes.</p>
+
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Webpage maintained by <a href="https://github.com/JeffLIrion">Jeff Irion</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+
+
+  </body>
+</html>

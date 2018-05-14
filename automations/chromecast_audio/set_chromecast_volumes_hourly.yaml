@@ -1,0 +1,8 @@
+- id: set_chromecast_volumes_hourly
+  alias: "CCA: Set Chromecast volumes hourly"
+  trigger:
+  - platform: time
+    minutes: /60
+    seconds: 00
+  action:
+  - service: python_script.set_chromecast_volumes

@@ -1,0 +1,10 @@
+- id: group_unavailable
+  alias: "CCA: Group unavailable"
+  trigger:
+  - platform: state
+    entity_id: media_player.all_my_speakers, media_player.kitchen_speakers
+    to: 'unavailable'
+    for:
+      minutes: 2
+  action:
+  - service: homeassistant.restart

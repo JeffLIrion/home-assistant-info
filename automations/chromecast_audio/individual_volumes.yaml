@@ -1,0 +1,17 @@
+# https://community.home-assistant.io/t/chromecast-radio-with-station-and-player-selection/12732/237
+# https://www.reddit.com/r/homeassistant/comments/6b002l/help_with_chromecast_audio_automation_constant/
+# https://community.home-assistant.io/t/need-help-with-volume-slider/18903/2
+
+- id: track_volume_individual
+  alias: "CCA: Track volume (individual)"
+  trigger:
+  - platform: state
+    entity_id: media_player.bedroom_mini, media_player.bedroom_speakers, media_player.computer_speakers, media_player.kitchen_home, media_player.living_room_speakers
+  condition:
+  - condition: template
+    value_template: "{{ trigger.to_state.attributes.volume_level is defined and trigger.to_state.attributes.volume_level | multiply(100) | round(0) != states('input_number.%s'|format(trigger.to_state.object_id)) }}"
+  action:
+  - service: input_number.set_value
+    data_template:
+      entity_id: "{{ 'input_number.%s'|format(trigger.to_state.object_id) }}"
+      value: "{{ trigger.to_state.attributes.volume_level | multiply(100) | round(0) }}"

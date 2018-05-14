@@ -1,0 +1,12 @@
+# Set the volume for a group of speakers to be the average volume of the speakers that are not Google Home or Google Mini devices
+
+- id: group_playback_start
+  alias: "CCA: Group playback (start)"
+  trigger:
+  - platform: state
+    entity_id: media_player.all_my_speakers, media_player.kitchen_speakers
+    from: 'off'
+  action:
+  - service: python_script.sync_chromecast_volumes
+    data:
+      entity_id: "{{ trigger.entity_id }}"

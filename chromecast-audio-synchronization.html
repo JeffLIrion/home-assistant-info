@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Information about my Home-Assistant setup">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="https://jefflirion.github.io/stylesheets/stylesheet.css">
+
+    <title>Home-Assistant Info</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="home_banner" href="https://jefflirion.github.io/">JeffLIrion.github.io</a>
+          <a id="repo_banner" href="https://github.com/JeffLIrion/home-assistant-info">View this repo</a>
+
+          <h1 id="project_title">Home Assistant Info</h1>
+          <h2 id="project_tagline">Chromecast Audio volume synchronization</h2>
+        </header>
+    </div>
+    
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>I have 3 Chromecast Audio devices, plus a Google Home and a Google Home Mini.  Group playback is awesome… when all my speakers are playing at the same volume.  Unfortunately, the volume levels can get out of sync for reasons such as:</p>
+<ol class="arabic simple">
+<li>Keeping my Google Home at a louder volume than my Chromecast Audio devices (so that I can hear what Google says).</li>
+<li>Playing music on a group that includes my Google home, then telling Google “louder” or “softer”, which will change the volume of the Google Home but not the other group members.</li>
+<li>Playing music on 1 or more devices and changing the volume level, then later playing music on a group which includes those devices.</li>
+</ol>
+<p>So I set out to use Home Assistant to ensure that when casting to a group, all speakers remain at the same volume.  For starters, here are the Chromecast Audio devices that I include in my setup:</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text"><strong>configuration.yaml</strong></span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">media_player</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">cast</span>
+    <span class="l l-Scalar l-Scalar-Plain">host</span><span class="p p-Indicator">:</span> <span class="kt">!secret</span> <span class="l l-Scalar l-Scalar-Plain">bedroom_mini_ip_address</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Bedroom Mini</span>
+
+<span class="c1">#  - platform: cast</span>
+<span class="c1">#    host:</span>
+<span class="c1">#    name: All My Speakers</span>
+
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">cast</span>
+    <span class="l l-Scalar l-Scalar-Plain">host</span><span class="p p-Indicator">:</span> <span class="kt">!secret</span> <span class="l l-Scalar l-Scalar-Plain">bedroom_speakers_ip_address</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Bedroom Speakers</span>
+
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">cast</span>
+    <span class="l l-Scalar l-Scalar-Plain">host</span><span class="p p-Indicator">:</span> <span class="kt">!secret</span> <span class="l l-Scalar l-Scalar-Plain">computer_speakers_ip_address</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Computer Speakers</span>
+
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">cast</span>
+    <span class="l l-Scalar l-Scalar-Plain">host</span><span class="p p-Indicator">:</span> <span class="kt">!secret</span> <span class="l l-Scalar l-Scalar-Plain">kitchen_home_ip_address</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Kitchen Home</span>
+
+<span class="c1">#  - platform: cast</span>
+<span class="c1">#    host:</span>
+<span class="c1">#    name: Kitchen Speakers</span>
+
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">cast</span>
+    <span class="l l-Scalar l-Scalar-Plain">host</span><span class="p p-Indicator">:</span> <span class="kt">!secret</span> <span class="l l-Scalar l-Scalar-Plain">living_room_speakers_ip_address</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Living Room Speakers</span>
+</pre></div>
+</div>
+</div>
+<p>The two devices that are commented out – “All My Speakers” and “Kitchen Speakers” – are cast groups that don’t have an IP address, and so they must be automatically discovered by Home Assistant.  Their members are:</p>
+<ul class="simple">
+<li>All My Speakers<ul>
+<li>Bedroom Speakers</li>
+<li>Computer Speakers</li>
+<li>Kitchen Home</li>
+<li>Living Room Speakers</li>
+</ul>
+</li>
+<li>Kitchen Speakers<ul>
+<li>Computer Speakers</li>
+<li>Kitchen Home</li>
+</ul>
+</li>
+</ul>
+<p>It’s worth mentioning that I have a Python script that I use to set the Chromecast volumes each hour, as well as an automation that calls it.  The Python script is <a class="reference external" href="./python_scripts/set_chromecast_volumes.py">set_chromecast_volumes.py</a> and the automation is <a class="reference external" href="./automations/chromecast_audio/set_chromecast_volumes_hourly.yaml">set_chromecast_volumes_hourly.yaml</a>.  I also use that Python script to set the volume of my Google Home when group playback stops.</p>
+<p>Getting back to the problem at hand, the challenge is that Home Assistant only knows the (average) volume of the group, not the volumes of the group members.  Rather than go into detail about the myriad of difficulties that this presents, I’ll jump straight to my solution.  First, I defined an <code class="docutils literal"><span class="pre">input_number</span></code> for each Chromecast, including the groups, that I use to track its volume level:</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text"><strong>configuration.yaml</strong></span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">input_number</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">all_my_speakers</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">All My Speakers</span>
+    <span class="l l-Scalar l-Scalar-Plain">icon</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">mdi:sort-numeric</span>
+    <span class="l l-Scalar l-Scalar-Plain">min</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">max</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
+    <span class="l l-Scalar l-Scalar-Plain">step</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+
+  <span class="l l-Scalar l-Scalar-Plain">bedroom_mini</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Bedroom Mini</span>
+    <span class="l l-Scalar l-Scalar-Plain">icon</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">mdi:sort-numeric</span>
+    <span class="l l-Scalar l-Scalar-Plain">min</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">max</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
+    <span class="l l-Scalar l-Scalar-Plain">step</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+
+  <span class="l l-Scalar l-Scalar-Plain">bedroom_speakers</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Bedroom Speakers</span>
+    <span class="l l-Scalar l-Scalar-Plain">icon</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">mdi:sort-numeric</span>
+    <span class="l l-Scalar l-Scalar-Plain">min</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">max</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
+    <span class="l l-Scalar l-Scalar-Plain">step</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+
+  <span class="l l-Scalar l-Scalar-Plain">computer_speakers</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Computer Speakers</span>
+    <span class="l l-Scalar l-Scalar-Plain">icon</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">mdi:sort-numeric</span>
+    <span class="l l-Scalar l-Scalar-Plain">min</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">max</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
+    <span class="l l-Scalar l-Scalar-Plain">step</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+
+  <span class="l l-Scalar l-Scalar-Plain">kitchen_home</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Kitchen Home</span>
+    <span class="l l-Scalar l-Scalar-Plain">icon</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">mdi:sort-numeric</span>
+    <span class="l l-Scalar l-Scalar-Plain">min</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">max</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
+    <span class="l l-Scalar l-Scalar-Plain">step</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+
+  <span class="l l-Scalar l-Scalar-Plain">kitchen_speakers</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Kitchen Speakers</span>
+    <span class="l l-Scalar l-Scalar-Plain">icon</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">mdi:sort-numeric</span>
+    <span class="l l-Scalar l-Scalar-Plain">min</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">max</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
+    <span class="l l-Scalar l-Scalar-Plain">step</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+
+  <span class="l l-Scalar l-Scalar-Plain">living_room_speakers</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Living Room Speakers</span>
+    <span class="l l-Scalar l-Scalar-Plain">icon</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">mdi:sort-numeric</span>
+    <span class="l l-Scalar l-Scalar-Plain">min</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">max</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
+    <span class="l l-Scalar l-Scalar-Plain">step</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+</pre></div>
+</div>
+</div>
+<p>And while I was at it, I also defined sensors to display these volumes, with the icon indicating whether the device is currently playing.</p>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-text"><strong>configuration.yaml</strong></span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">sensor</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">template</span>
+    <span class="l l-Scalar l-Scalar-Plain">sensors</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">all_my_speakers</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">friendly_name</span><span class="p p-Indicator">:</span> <span class="s">&quot;All</span><span class="nv"> </span><span class="s">My</span><span class="nv"> </span><span class="s">Speakers&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">media_player.all_my_speakers</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">input_number.all_my_speakers</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">input_number.bedroom_speakers</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">input_number.computer_speakers</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">input_number.living_room_speakers</span>
+        <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">&gt;</span>
+            <span class="no">{% if is_state(&#39;media_player.all_my_speakers&#39;, &#39;off&#39;) %}</span>
+                <span class="no">{{ ( float(states(&#39;input_number.bedroom_speakers&#39;)) + float(states(&#39;input_number.computer_speakers&#39;)) + float(states(&#39;input_number.living_room_speakers&#39;)) ) | multiply(0.33333334) | round(0) }}</span>
+            <span class="no">{% else %}</span>
+                <span class="no">{{ states(&#39;input_number.all_my_speakers&#39;) | round(0) }}</span>
+            <span class="no">{% endif %}</span>
+        <span class="l l-Scalar l-Scalar-Plain">icon_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{%</span><span class="nv"> </span><span class="s">if</span><span class="nv"> </span><span class="s">is_state(&#39;media_player.all_my_speakers&#39;,</span><span class="nv"> </span><span class="s">&#39;off&#39;)</span><span class="nv"> </span><span class="s">%}mdi:cast{%</span><span class="nv"> </span><span class="s">else</span><span class="nv"> </span><span class="s">%}mdi:cast-connected{%</span><span class="nv"> </span><span class="s">endif</span><span class="nv"> </span><span class="s">%}&quot;</span>
+
+      <span class="l l-Scalar l-Scalar-Plain">bedroom_mini</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">friendly_name</span><span class="p p-Indicator">:</span> <span class="s">&quot;Bedroom</span><span class="nv"> </span><span class="s">Mini&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">input_number.bedroom_mini</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">media_player.bedroom_mini</span>
+        <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.bedroom_mini&#39;)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">icon_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{%</span><span class="nv"> </span><span class="s">if</span><span class="nv"> </span><span class="s">is_state(&#39;media_player.bedroom_mini&#39;,</span><span class="nv"> </span><span class="s">&#39;off&#39;)</span><span class="nv"> </span><span class="s">%}mdi:cast{%</span><span class="nv"> </span><span class="s">else</span><span class="nv"> </span><span class="s">%}mdi:cast-connected{%</span><span class="nv"> </span><span class="s">endif</span><span class="nv"> </span><span class="s">%}&quot;</span>
+
+      <span class="l l-Scalar l-Scalar-Plain">bedroom_speakers</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">friendly_name</span><span class="p p-Indicator">:</span> <span class="s">&quot;Bedroom</span><span class="nv"> </span><span class="s">Speakers&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">input_number.bedroom_speakers</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">media_player.bedroom_speakers</span>
+        <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.bedroom_speakers&#39;)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">icon_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{%</span><span class="nv"> </span><span class="s">if</span><span class="nv"> </span><span class="s">is_state(&#39;media_player.bedroom_speakers&#39;,</span><span class="nv"> </span><span class="s">&#39;off&#39;)</span><span class="nv"> </span><span class="s">%}mdi:cast{%</span><span class="nv"> </span><span class="s">else</span><span class="nv"> </span><span class="s">%}mdi:cast-connected{%</span><span class="nv"> </span><span class="s">endif</span><span class="nv"> </span><span class="s">%}&quot;</span>
+
+      <span class="l l-Scalar l-Scalar-Plain">computer_speakers</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">friendly_name</span><span class="p p-Indicator">:</span> <span class="s">&quot;Computer</span><span class="nv"> </span><span class="s">Speakers&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">input_number.computer_speakers</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">media_player.computer_speakers</span>
+        <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.computer_speakers&#39;)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">icon_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{%</span><span class="nv"> </span><span class="s">if</span><span class="nv"> </span><span class="s">is_state(&#39;media_player.computer_speakers&#39;,</span><span class="nv"> </span><span class="s">&#39;off&#39;)</span><span class="nv"> </span><span class="s">%}mdi:cast{%</span><span class="nv"> </span><span class="s">else</span><span class="nv"> </span><span class="s">%}mdi:cast-connected{%</span><span class="nv"> </span><span class="s">endif</span><span class="nv"> </span><span class="s">%}&quot;</span>
+
+      <span class="l l-Scalar l-Scalar-Plain">kitchen_home</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">friendly_name</span><span class="p p-Indicator">:</span> <span class="s">&quot;Kitchen</span><span class="nv"> </span><span class="s">Home&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">input_number.kitchen_home</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">media_player.kitchen_home</span>
+        <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.kitchen_home&#39;)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">icon_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{%</span><span class="nv"> </span><span class="s">if</span><span class="nv"> </span><span class="s">is_state(&#39;media_player.kitchen_home&#39;,</span><span class="nv"> </span><span class="s">&#39;off&#39;)</span><span class="nv"> </span><span class="s">%}mdi:cast{%</span><span class="nv"> </span><span class="s">else</span><span class="nv"> </span><span class="s">%}mdi:cast-connected{%</span><span class="nv"> </span><span class="s">endif</span><span class="nv"> </span><span class="s">%}&quot;</span>
+
+      <span class="l l-Scalar l-Scalar-Plain">kitchen_speakers</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">friendly_name</span><span class="p p-Indicator">:</span> <span class="s">&quot;Kitchen</span><span class="nv"> </span><span class="s">Speakers&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">media_player.kitchen_speakers</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">input_number.kitchen_speakers</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">input_number.computer_speakers</span>
+        <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">&gt;</span>
+            <span class="no">{% if is_state(&#39;media_player.kitchen_speakers&#39;, &#39;off&#39;) %}</span>
+                <span class="no">{{ states(&#39;input_number.computer_speakers&#39;) | round(0) }}</span>
+            <span class="no">{% else %}</span>
+                <span class="no">{{ states(&#39;input_number.kitchen_speakers&#39;) | round(0) }}</span>
+            <span class="no">{% endif %}</span>
+        <span class="l l-Scalar l-Scalar-Plain">icon_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{%</span><span class="nv"> </span><span class="s">if</span><span class="nv"> </span><span class="s">is_state(&#39;media_player.kitchen_speakers&#39;,</span><span class="nv"> </span><span class="s">&#39;off&#39;)</span><span class="nv"> </span><span class="s">%}mdi:cast{%</span><span class="nv"> </span><span class="s">else</span><span class="nv"> </span><span class="s">%}mdi:cast-connected{%</span><span class="nv"> </span><span class="s">endif</span><span class="nv"> </span><span class="s">%}&quot;</span>
+
+      <span class="l l-Scalar l-Scalar-Plain">living_room_speakers</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">friendly_name</span><span class="p p-Indicator">:</span> <span class="s">&quot;Living</span><span class="nv"> </span><span class="s">Room</span><span class="nv"> </span><span class="s">Speakers&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">input_number.living_room_speakers</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">media_player.living_room_speakers</span>
+        <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.living_room_speakers&#39;)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">icon_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{%</span><span class="nv"> </span><span class="s">if</span><span class="nv"> </span><span class="s">is_state(&#39;media_player.living_room_speakers&#39;,</span><span class="nv"> </span><span class="s">&#39;off&#39;)</span><span class="nv"> </span><span class="s">%}mdi:cast{%</span><span class="nv"> </span><span class="s">else</span><span class="nv"> </span><span class="s">%}mdi:cast-connected{%</span><span class="nv"> </span><span class="s">endif</span><span class="nv"> </span><span class="s">%}&quot;</span>
+</pre></div>
+</div>
+</div>
+<p>Using automations to track individual volumes was pretty simple (see <a class="reference external" href="./automations/chromecast_audio/individual_volumes.yaml">individual_volumes.yaml</a>):</p>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-text"><strong>individual_volumes.yaml</strong></span><a class="headerlink" href="#id5" title="Permalink to this code">¶</a></div>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">track_volume_individual</span>
+  <span class="l l-Scalar l-Scalar-Plain">alias</span><span class="p p-Indicator">:</span> <span class="s">&quot;CCA:</span><span class="nv"> </span><span class="s">Track</span><span class="nv"> </span><span class="s">volume</span><span class="nv"> </span><span class="s">(individual)&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">trigger</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">state</span>
+    <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.bedroom_mini, media_player.bedroom_speakers, media_player.computer_speakers, media_player.kitchen_home, media_player.living_room_speakers</span>
+  <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">template</span>
+    <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">is</span><span class="nv"> </span><span class="s">defined</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">}}&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">action</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">&#39;input_number.%s&#39;|format(trigger.to_state.object_id)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</pre></div>
+</div>
+</div>
+<p>The next step was to create an automation that would synchronize the volume levels when group playback started.  This was simple enough (see <a class="reference external" href="./automations/chromecast_audio/group_playback_start.yaml">group_playback_start.yaml</a>):</p>
+<div class="literal-block-wrapper docutils container" id="id6">
+<div class="code-block-caption"><span class="caption-text"><strong>group_playback_start.yaml</strong></span><a class="headerlink" href="#id6" title="Permalink to this code">¶</a></div>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">group_playback_start</span>
+  <span class="l l-Scalar l-Scalar-Plain">alias</span><span class="p p-Indicator">:</span> <span class="s">&quot;CCA:</span><span class="nv"> </span><span class="s">Group</span><span class="nv"> </span><span class="s">playback</span><span class="nv"> </span><span class="s">(start)&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">trigger</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">state</span>
+    <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.all_my_speakers, media_player.kitchen_speakers</span>
+    <span class="l l-Scalar l-Scalar-Plain">from</span><span class="p p-Indicator">:</span> <span class="s">&#39;off&#39;</span>
+  <span class="l l-Scalar l-Scalar-Plain">action</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">python_script.sync_chromecast_volumes</span>
+    <span class="l l-Scalar l-Scalar-Plain">data</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.entity_id</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</pre></div>
+</div>
+</div>
+<p>I need an automation that will update my trackers (i.e., <code class="docutils literal"><span class="pre">input_number.&lt;group_object_id&gt;</span></code>) for the group volumes when they are NOT playing by averaging the volumes of their members, excluding the Kitchen Home.  Using my <code class="docutils literal"><span class="pre">sensor.all_my_speakers</span></code> and <code class="docutils literal"><span class="pre">sensor.kitchen_speakers</span></code> template sensors, defined above, this is pretty easy (see <a class="reference external" href="./automations/chromecast_audio/group_volumes.yaml">group_volumes.yaml</a>):</p>
+<div class="literal-block-wrapper docutils container" id="id7">
+<div class="code-block-caption"><span class="caption-text"><strong>group_volumes.yaml</strong></span><a class="headerlink" href="#id7" title="Permalink to this code">¶</a></div>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">track_volume_group</span>
+  <span class="l l-Scalar l-Scalar-Plain">alias</span><span class="p p-Indicator">:</span> <span class="s">&quot;CCA:</span><span class="nv"> </span><span class="s">Track</span><span class="nv"> </span><span class="s">volume</span><span class="nv"> </span><span class="s">(group)&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">trigger</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">state</span>
+    <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">sensor.all_my_speakers, sensor.kitchen_speakers</span>
+  <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">template</span>
+    <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;media_player.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">==</span><span class="nv"> </span><span class="s">&#39;off&#39;</span><span class="nv"> </span><span class="s">or</span><span class="nv"> </span><span class="s">states(&#39;media_player.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">==</span><span class="nv"> </span><span class="s">&#39;unavailable&#39;</span><span class="nv"> </span><span class="s">}}&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">action</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">&#39;input_number.%s&#39;|format(trigger.to_state.object_id)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;sensor.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</pre></div>
+</div>
+</div>
+<p>Now for the hard part!  For each group, I need to define two automations.  For both automations, the trigger is a change in the state of the Chromecast Audio group media player, and their first condition is that the media player volume is not equal to the tracker volume.  The difference is in their second condition:</p>
+<ul class="simple">
+<li>If <code class="docutils literal"><span class="pre">input_number.&lt;group_object_id&gt;</span> <span class="pre">==</span> <span class="pre">input_number.&lt;member_object_id&gt;</span></code> for all the members of the group, then the system was normalized and now the volume has been changed, and so we need to (1) update the group volume tracker, <code class="docutils literal"><span class="pre">input_number.&lt;group_object_id&gt;</span></code>, (2) set the volume of each group member to this new volume, and (3) set the tracker for each group member, <code class="docutils literal"><span class="pre">input_number.&lt;member_object_id&gt;</span></code>, to the new value, <code class="docutils literal"><span class="pre">input_number.&lt;group_object_id&gt;</span></code>.  See the automations <code class="docutils literal"><span class="pre">track_and_normalize_volume_all_my_speakers</span></code> and <code class="docutils literal"><span class="pre">track_and_normalize_volume_kitchen_speakers</span></code> below.</li>
+<li>Otherwise, the member volumes were not normalized and the (average) group volume only changed because the member volumes are being normalized.  In this case, we simply need to (1) set the volume of each group member to the value of <code class="docutils literal"><span class="pre">input_number.&lt;group_object_id&gt;</span></code> and (2) set the tracker for each group member, <code class="docutils literal"><span class="pre">input_number.&lt;member_object_id&gt;</span></code>, to <code class="docutils literal"><span class="pre">input_number.&lt;group_object_id&gt;</span></code>.  See the automations <code class="docutils literal"><span class="pre">normalize_volume_all_my_speakers</span></code> and <code class="docutils literal"><span class="pre">normalize_volume_kitchen_speakers</span></code> below.</li>
+</ul>
+<div class="literal-block-wrapper docutils container" id="id8">
+<div class="code-block-caption"><span class="caption-text"><strong>group_volumes.yaml</strong></span><a class="headerlink" href="#id8" title="Permalink to this code">¶</a></div>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="c1"># All My Speakers</span>
+<span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">track_and_normalize_volume_all_my_speakers</span>
+  <span class="l l-Scalar l-Scalar-Plain">alias</span><span class="p p-Indicator">:</span> <span class="s">&quot;CCA:</span><span class="nv"> </span><span class="s">Track</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">normalize</span><span class="nv"> </span><span class="s">volume</span><span class="nv"> </span><span class="s">for</span><span class="nv"> </span><span class="s">All</span><span class="nv"> </span><span class="s">My</span><span class="nv"> </span><span class="s">Speakers&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">trigger</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">state</span>
+    <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.all_my_speakers</span>
+  <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">and</span>
+    <span class="l l-Scalar l-Scalar-Plain">conditions</span><span class="p p-Indicator">:</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">template</span>
+      <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">is</span><span class="nv"> </span><span class="s">defined</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">}}&quot;</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">template</span>
+      <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">==</span><span class="nv"> </span><span class="s">states(&#39;input_number.bedroom_speakers&#39;)</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">states(&#39;input_number.bedroom_speakers&#39;)</span><span class="nv"> </span><span class="s">==</span><span class="nv"> </span><span class="s">states(&#39;input_number.computer_speakers&#39;)</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">states(&#39;input_number.computer_speakers&#39;)</span><span class="nv"> </span><span class="s">==</span><span class="nv"> </span><span class="s">states(&#39;input_number.kitchen_home&#39;)</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">states(&#39;input_number.kitchen_home&#39;)</span><span class="nv"> </span><span class="s">==</span><span class="nv"> </span><span class="s">states(&#39;input_number.living_room_speakers&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">action</span><span class="p p-Indicator">:</span>
+  <span class="c1"># All My Speakers -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">&#39;input_number.%s&#39;|format(trigger.to_state.object_id)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Bedroom Speakers -- set volume</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.volume_set</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.bedroom_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">volume_level</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Computer Speakers -- set volume</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.volume_set</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.computer_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">volume_level</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Kitchen Home -- set volume</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.volume_set</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.kitchen_home</span>
+      <span class="l l-Scalar l-Scalar-Plain">volume_level</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Living Room Speakers -- set volume</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.volume_set</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.living_room_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">volume_level</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Bedroom Speakers -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.bedroom_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Computer Speakers -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.computer_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Kitchen Home -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.kitchen_home</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int}}&quot;</span>
+
+  <span class="c1"># Living Room Speakers -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.living_room_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+
+
+<span class="c1"># All My Speakers</span>
+<span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">normalize_volume_all_my_speakers</span>
+  <span class="l l-Scalar l-Scalar-Plain">alias</span><span class="p p-Indicator">:</span> <span class="s">&quot;CCA:</span><span class="nv"> </span><span class="s">Normalize</span><span class="nv"> </span><span class="s">volume</span><span class="nv"> </span><span class="s">for</span><span class="nv"> </span><span class="s">All</span><span class="nv"> </span><span class="s">My</span><span class="nv"> </span><span class="s">Speakers&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">trigger</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">state</span>
+    <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.all_my_speakers</span>
+  <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">and</span>
+    <span class="l l-Scalar l-Scalar-Plain">conditions</span><span class="p p-Indicator">:</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">template</span>
+      <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">is</span><span class="nv"> </span><span class="s">defined</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">}}&quot;</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">template</span>
+      <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">states(&#39;input_number.bedroom_speakers&#39;)</span><span class="nv"> </span><span class="s">or</span><span class="nv"> </span><span class="s">states(&#39;input_number.bedroom_speakers&#39;)</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">states(&#39;input_number.computer_speakers&#39;)</span><span class="nv"> </span><span class="s">or</span><span class="nv"> </span><span class="s">states(&#39;input_number.computer_speakers&#39;)</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">states(&#39;input_number.kitchen_home&#39;)</span><span class="nv"> </span><span class="s">or</span><span class="nv"> </span><span class="s">states(&#39;input_number.kitchen_home&#39;)</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">states(&#39;input_number.living_room_speakers&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">action</span><span class="p p-Indicator">:</span>
+  <span class="c1"># Bedroom Speakers -- set volume</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.volume_set</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.bedroom_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">volume_level</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(0.01)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Computer Speakers -- set volume</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.volume_set</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.computer_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">volume_level</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(0.01)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Kitchen Home -- set volume</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.volume_set</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.kitchen_home</span>
+      <span class="l l-Scalar l-Scalar-Plain">volume_level</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(0.01)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Living Room Speakers -- set volume</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.volume_set</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.living_room_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">volume_level</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(0.01)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Bedroom Speakers -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.bedroom_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Computer Speakers -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.computer_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Kitchen Home -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.kitchen_home</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Living Room Speakers -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.living_room_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+
+
+<span class="c1"># Kitchen Speakers</span>
+<span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">track_and_normalize_volume_kitchen_speakers</span>
+  <span class="l l-Scalar l-Scalar-Plain">alias</span><span class="p p-Indicator">:</span> <span class="s">&quot;CCA:</span><span class="nv"> </span><span class="s">Track</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">normalize</span><span class="nv"> </span><span class="s">volume</span><span class="nv"> </span><span class="s">for</span><span class="nv"> </span><span class="s">Kitchen</span><span class="nv"> </span><span class="s">Speakers&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">trigger</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">state</span>
+    <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.kitchen_speakers</span>
+  <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">and</span>
+    <span class="l l-Scalar l-Scalar-Plain">conditions</span><span class="p p-Indicator">:</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">template</span>
+      <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">is</span><span class="nv"> </span><span class="s">defined</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">}}&quot;</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">template</span>
+      <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">==</span><span class="nv"> </span><span class="s">states(&#39;input_number.computer_speakers&#39;)</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">states(&#39;input_number.computer_speakers&#39;)</span><span class="nv"> </span><span class="s">==</span><span class="nv"> </span><span class="s">states(&#39;input_number.kitchen_home&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">action</span><span class="p p-Indicator">:</span>
+  <span class="c1"># Kitchen Speakers -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">&#39;input_number.%s&#39;|format(trigger.to_state.object_id)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Computer Speakers -- set volume</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.volume_set</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.computer_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">volume_level</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Kitchen Home -- set volume</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.volume_set</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.kitchen_home</span>
+      <span class="l l-Scalar l-Scalar-Plain">volume_level</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Computer Speakers -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.computer_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Kitchen Home -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.kitchen_home</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int}}&quot;</span>
+
+
+
+<span class="c1"># Kitchen Speakers</span>
+<span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">normalize_volume_kitchen_speakers</span>
+  <span class="l l-Scalar l-Scalar-Plain">alias</span><span class="p p-Indicator">:</span> <span class="s">&quot;CCA:</span><span class="nv"> </span><span class="s">Normalize</span><span class="nv"> </span><span class="s">volume</span><span class="nv"> </span><span class="s">for</span><span class="nv"> </span><span class="s">Kitchen</span><span class="nv"> </span><span class="s">Speakers&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">trigger</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">state</span>
+    <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.kitchen_speakers</span>
+  <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">and</span>
+    <span class="l l-Scalar l-Scalar-Plain">conditions</span><span class="p p-Indicator">:</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">template</span>
+      <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">is</span><span class="nv"> </span><span class="s">defined</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">trigger.to_state.attributes.volume_level</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(100)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">round(0)</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">}}&quot;</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">condition</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">template</span>
+      <span class="l l-Scalar l-Scalar-Plain">value_template</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">states(&#39;input_number.computer_speakers&#39;)</span><span class="nv"> </span><span class="s">or</span><span class="nv"> </span><span class="s">states(&#39;input_number.computer_speakers&#39;)</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">states(&#39;input_number.kitchen_home&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">action</span><span class="p p-Indicator">:</span>
+  <span class="c1"># Computer Speakers -- set volume</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.volume_set</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.computer_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">volume_level</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(0.01)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Kitchen Home -- set volume</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.volume_set</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.kitchen_home</span>
+      <span class="l l-Scalar l-Scalar-Plain">volume_level</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">multiply(0.01)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Computer Speakers -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.computer_speakers</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">}}&quot;</span>
+
+  <span class="c1"># Kitchen Home -- set tracker</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.set_value</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input_number.kitchen_home</span>
+      <span class="l l-Scalar l-Scalar-Plain">value</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">states(&#39;input_number.%s&#39;|format(trigger.to_state.object_id))</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</pre></div>
+</div>
+</div>
+<p>At this point, we have automations to normalize the volume when group playback begins and also to normalize the volume when the group volume changes.  The last thing I needed was automation to set my Google Home volume back to baseline when playback stopped.  For this, I utilized my <a class="reference external" href="./python_scripts/set_chromecast_volumes.py">set_chromecast_volumes.py</a> Python script once again.  The automation is (see <a class="reference external" href="./automations/chromecast_audio/group_playback_stop.yaml">group_playback_stop.yaml</a>):</p>
+<div class="literal-block-wrapper docutils container" id="id9">
+<div class="code-block-caption"><span class="caption-text"><strong>group_playback_stop.yaml</strong></span><a class="headerlink" href="#id9" title="Permalink to this code">¶</a></div>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">group_playback_stop</span>
+  <span class="l l-Scalar l-Scalar-Plain">alias</span><span class="p p-Indicator">:</span> <span class="s">&quot;CCA:</span><span class="nv"> </span><span class="s">Group</span><span class="nv"> </span><span class="s">playback</span><span class="nv"> </span><span class="s">(stop)&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">trigger</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">state</span>
+    <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.all_my_speakers, media_player.kitchen_speakers</span>
+    <span class="l l-Scalar l-Scalar-Plain">to</span><span class="p p-Indicator">:</span> <span class="s">&#39;off&#39;</span>
+  <span class="l l-Scalar l-Scalar-Plain">action</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">python_script.set_chromecast_volumes</span>
+    <span class="l l-Scalar l-Scalar-Plain">data_template</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.kitchen_home</span>
+</pre></div>
+</div>
+</div>
+<p><strong>Bonus:</strong> Sometimes a Chromecast Audio group will become unavailable in Home Assistant.  To deal with this case, I created an automation that will restart Home Assistant if a Chromecast group is unavailable for 2 minutes (see <a class="reference external" href="./automations/chromecast_audio/group_unavailable.yaml">group_unavailable.yaml</a>):</p>
+<div class="literal-block-wrapper docutils container" id="id10">
+<div class="code-block-caption"><span class="caption-text"><strong>group_unavailable.yaml</strong></span><a class="headerlink" href="#id10" title="Permalink to this code">¶</a></div>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">group_unavailable</span>
+  <span class="l l-Scalar l-Scalar-Plain">alias</span><span class="p p-Indicator">:</span> <span class="s">&quot;CCA:</span><span class="nv"> </span><span class="s">Group</span><span class="nv"> </span><span class="s">unavailable&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">trigger</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">state</span>
+    <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">media_player.all_my_speakers, media_player.kitchen_speakers</span>
+    <span class="l l-Scalar l-Scalar-Plain">to</span><span class="p p-Indicator">:</span> <span class="s">&#39;unavailable&#39;</span>
+    <span class="l l-Scalar l-Scalar-Plain">for</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">minutes</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+  <span class="l l-Scalar l-Scalar-Plain">action</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">homeassistant.restart</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Webpage maintained by <a href="https://github.com/JeffLIrion">Jeff Irion</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+
+
+  </body>
+</html>
