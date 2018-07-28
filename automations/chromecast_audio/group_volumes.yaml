@@ -1,11 +1,11 @@
-- id: track_volume_group
-  alias: "CCA: Track volume (group)"
+- id: track_volume_group_off
+  alias: "CCA: Track volume (group [off])"
   trigger:
   - platform: state
-    entity_id: sensor.all_my_speakers, sensor.kitchen_speakers
+    entity_id: sensor.all_my_speakers, sensor.kitchen_speakers, sensor.main_speakers
   condition:
   - condition: template
-    value_template: "{{ states('media_player.%s'|format(trigger.to_state.object_id)) == 'off' or states('media_player.%s'|format(trigger.to_state.object_id)) == 'unavailable' }}"
+    value_template: "{{ states('media_player.%s'|format(trigger.to_state.object_id)) in ['off', 'unavailable'] }}"
   action:
   - service: input_number.set_value
     data_template:
@@ -14,220 +14,88 @@
 
 
 
-# All My Speakers
-- id: track_and_normalize_volume_all_my_speakers
-  alias: "CCA: Track and normalize volume for All My Speakers"
+# all volumes are the same --> track and normalize
+- id: track_and_normalize_volume_group
+  alias: "CCA: Track and normalize volume (group)"
   trigger:
   - platform: state
-    entity_id: media_player.all_my_speakers
+    entity_id: media_player.all_my_speakers, media_player.kitchen_speakers, media_player.main_speakers
   condition:
     condition: and
     conditions:
     - condition: template
       value_template: "{{ trigger.to_state.attributes.volume_level is defined and trigger.to_state.attributes.volume_level | multiply(100) | round(0) | int != states('input_number.%s'|format(trigger.to_state.object_id)) | int }}"
     - condition: template
-      value_template: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) == states('input_number.bedroom_speakers') and states('input_number.bedroom_speakers') == states('input_number.computer_speakers') and states('input_number.computer_speakers') == states('input_number.kitchen_home') and states('input_number.kitchen_home') == states('input_number.living_room_speakers') }}"
+      value_template: >
+        {%- for entity_id in states.group[trigger.to_state.object_id].attributes.entity_id if states(entity_id) != states('input_number.%s'|format(trigger.to_state.object_id)) -%}
+        {%- if loop.first -%}false{%- endif -%}
+        {%- else -%}
+        true
+        {%- endfor -%}
   action:
-  # All My Speakers -- set tracker
+  # 1) Set group tracker
   - service: input_number.set_value
     data_template:
       entity_id: "{{ 'input_number.%s'|format(trigger.to_state.object_id) }}"
       value: "{{ trigger.to_state.attributes.volume_level | multiply(100) | round(0) | int }}"
 
-  # Bedroom Speakers -- set volume
+  # 2) Set individual volumes
   - service: media_player.volume_set
     data_template:
-      entity_id: media_player.bedroom_speakers
+      entity_id: >
+        {%- for entity_id in states.group[trigger.to_state.object_id].attributes.entity_id -%}
+        {{ entity_id|replace('input_number', 'media_player') }}
+        {%- if not loop.last -%}, {%- endif -%}
+        {%- endfor -%}
       volume_level: "{{ trigger.to_state.attributes.volume_level }}"
 
-  # Computer Speakers -- set volume
-  - service: media_player.volume_set
-    data_template:
-      entity_id: media_player.computer_speakers
-      volume_level: "{{ trigger.to_state.attributes.volume_level }}"
-
-  # Kitchen Home -- set volume
-  - service: media_player.volume_set
-    data_template:
-      entity_id: media_player.kitchen_home
-      volume_level: "{{ trigger.to_state.attributes.volume_level }}"
-
-  # Living Room Speakers -- set volume
-  - service: media_player.volume_set
-    data_template:
-      entity_id: media_player.living_room_speakers
-      volume_level: "{{ trigger.to_state.attributes.volume_level }}"
-
-  # Bedroom Speakers -- set tracker
+  # 3) Set individual trackers
   - service: input_number.set_value
     data_template:
-      entity_id: input_number.bedroom_speakers
-      value: "{{ trigger.to_state.attributes.volume_level | multiply(100) | round(0) | int }}"
-
-  # Computer Speakers -- set tracker
-  - service: input_number.set_value
-    data_template:
-      entity_id: input_number.computer_speakers
-      value: "{{ trigger.to_state.attributes.volume_level | multiply(100) | round(0) | int }}"
-
-  # Kitchen Home -- set tracker
-  - service: input_number.set_value
-    data_template:
-      entity_id: input_number.kitchen_home
-      value: "{{ trigger.to_state.attributes.volume_level | multiply(100) | round(0) | int}}"
-
-  # Living Room Speakers -- set tracker
-  - service: input_number.set_value
-    data_template:
-      entity_id: input_number.living_room_speakers
+      entity_id: >
+        {%- for entity_id in states.group[trigger.to_state.object_id].attributes.entity_id -%}
+        {{ entity_id }}
+        {%- if not loop.last -%}, {%- endif -%}
+        {%- endfor -%}
       value: "{{ trigger.to_state.attributes.volume_level | multiply(100) | round(0) | int }}"
 
 
 
-# All My Speakers
-- id: normalize_volume_all_my_speakers
-  alias: "CCA: Normalize volume for All My Speakers"
+# all volumes are NOT the same --> normalize only
+- id: normalize_volume_group
+  alias: "CCA: Normalize volume (group)"
   trigger:
   - platform: state
-    entity_id: media_player.all_my_speakers
+    entity_id: media_player.all_my_speakers, media_player.kitchen_speakers, media_player.main_speakers
   condition:
     condition: and
     conditions:
     - condition: template
       value_template: "{{ trigger.to_state.attributes.volume_level is defined and trigger.to_state.attributes.volume_level | multiply(100) | round(0) | int != states('input_number.%s'|format(trigger.to_state.object_id)) | int }}"
     - condition: template
-      value_template: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) != states('input_number.bedroom_speakers') or states('input_number.bedroom_speakers') != states('input_number.computer_speakers') or states('input_number.computer_speakers') != states('input_number.kitchen_home') or states('input_number.kitchen_home') != states('input_number.living_room_speakers') }}"
+      value_template: >
+        {%- for entity_id in states.group[trigger.to_state.object_id].attributes.entity_id if states(entity_id) != states('input_number.%s'|format(trigger.to_state.object_id)) -%}
+        {%- if loop.first -%}true{%- endif -%}
+        {%- else -%}
+        false
+        {%- endfor -%}
   action:
-  # Bedroom Speakers -- set volume
+  # 1) Set individual volumes
   - service: media_player.volume_set
     data_template:
-      entity_id: media_player.bedroom_speakers
+      entity_id: >
+        {%- for entity_id in states.group[trigger.to_state.object_id].attributes.entity_id -%}
+        {{ entity_id|replace('input_number', 'media_player') }}
+        {%- if not loop.last -%}, {%- endif -%}
+        {%- endfor -%}
       volume_level: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) | multiply(0.01) }}"
 
-  # Computer Speakers -- set volume
-  - service: media_player.volume_set
-    data_template:
-      entity_id: media_player.computer_speakers
-      volume_level: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) | multiply(0.01) }}"
-
-  # Kitchen Home -- set volume
-  - service: media_player.volume_set
-    data_template:
-      entity_id: media_player.kitchen_home
-      volume_level: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) | multiply(0.01) }}"
-
-  # Living Room Speakers -- set volume
-  - service: media_player.volume_set
-    data_template:
-      entity_id: media_player.living_room_speakers
-      volume_level: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) | multiply(0.01) }}"
-
-  # Bedroom Speakers -- set tracker
+  # 2) Set individual trackers
   - service: input_number.set_value
     data_template:
-      entity_id: input_number.bedroom_speakers
-      value: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) }}"
-
-  # Computer Speakers -- set tracker
-  - service: input_number.set_value
-    data_template:
-      entity_id: input_number.computer_speakers
-      value: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) }}"
-
-  # Kitchen Home -- set tracker
-  - service: input_number.set_value
-    data_template:
-      entity_id: input_number.kitchen_home
-      value: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) }}"
-
-  # Living Room Speakers -- set tracker
-  - service: input_number.set_value
-    data_template:
-      entity_id: input_number.living_room_speakers
-      value: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) }}"
-
-
-
-# Kitchen Speakers
-- id: track_and_normalize_volume_kitchen_speakers
-  alias: "CCA: Track and normalize volume for Kitchen Speakers"
-  trigger:
-  - platform: state
-    entity_id: media_player.kitchen_speakers
-  condition:
-    condition: and
-    conditions:
-    - condition: template
-      value_template: "{{ trigger.to_state.attributes.volume_level is defined and trigger.to_state.attributes.volume_level | multiply(100) | round(0) | int != states('input_number.%s'|format(trigger.to_state.object_id)) | int }}"
-    - condition: template
-      value_template: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) == states('input_number.computer_speakers') and states('input_number.computer_speakers') == states('input_number.kitchen_home') }}"
-  action:
-  # Kitchen Speakers -- set tracker
-  - service: input_number.set_value
-    data_template:
-      entity_id: "{{ 'input_number.%s'|format(trigger.to_state.object_id) }}"
-      value: "{{ trigger.to_state.attributes.volume_level | multiply(100) | round(0) | int }}"
-
-  # Computer Speakers -- set volume
-  - service: media_player.volume_set
-    data_template:
-      entity_id: media_player.computer_speakers
-      volume_level: "{{ trigger.to_state.attributes.volume_level }}"
-
-  # Kitchen Home -- set volume
-  - service: media_player.volume_set
-    data_template:
-      entity_id: media_player.kitchen_home
-      volume_level: "{{ trigger.to_state.attributes.volume_level }}"
-
-  # Computer Speakers -- set tracker
-  - service: input_number.set_value
-    data_template:
-      entity_id: input_number.computer_speakers
-      value: "{{ trigger.to_state.attributes.volume_level | multiply(100) | round(0) | int }}"
-
-  # Kitchen Home -- set tracker
-  - service: input_number.set_value
-    data_template:
-      entity_id: input_number.kitchen_home
-      value: "{{ trigger.to_state.attributes.volume_level | multiply(100) | round(0) | int}}"
-
-
-
-# Kitchen Speakers
-- id: normalize_volume_kitchen_speakers
-  alias: "CCA: Normalize volume for Kitchen Speakers"
-  trigger:
-  - platform: state
-    entity_id: media_player.kitchen_speakers
-  condition:
-    condition: and
-    conditions:
-    - condition: template
-      value_template: "{{ trigger.to_state.attributes.volume_level is defined and trigger.to_state.attributes.volume_level | multiply(100) | round(0) | int != states('input_number.%s'|format(trigger.to_state.object_id)) | int }}"
-    - condition: template
-      value_template: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) != states('input_number.computer_speakers') or states('input_number.computer_speakers') != states('input_number.kitchen_home') }}"
-  action:
-  # Computer Speakers -- set volume
-  - service: media_player.volume_set
-    data_template:
-      entity_id: media_player.computer_speakers
-      volume_level: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) | multiply(0.01) }}"
-
-  # Kitchen Home -- set volume
-  - service: media_player.volume_set
-    data_template:
-      entity_id: media_player.kitchen_home
-      volume_level: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) | multiply(0.01) }}"
-
-  # Computer Speakers -- set tracker
-  - service: input_number.set_value
-    data_template:
-      entity_id: input_number.computer_speakers
-      value: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) }}"
-
-  # Kitchen Home -- set tracker
-  - service: input_number.set_value
-    data_template:
-      entity_id: input_number.kitchen_home
+      entity_id: >
+        {%- for entity_id in states.group[trigger.to_state.object_id].attributes.entity_id -%}
+        {{ entity_id }}
+        {%- if not loop.last -%}, {%- endif -%}
+        {%- endfor -%}
       value: "{{ states('input_number.%s'|format(trigger.to_state.object_id)) }}"

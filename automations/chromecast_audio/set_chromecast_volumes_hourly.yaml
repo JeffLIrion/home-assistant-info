@@ -5,4 +5,4 @@
     minutes: /60
     seconds: 00
   action:
-  - service: python_script.set_chromecast_volumes
+  - service: python_script.cca_set_chromecast_volumes

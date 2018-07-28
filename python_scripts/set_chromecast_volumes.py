@@ -25,14 +25,18 @@ kitchen_home =          { 0: 0.6,    1: 0.6,    2: 0.6,    3: 0.6,    4: 0.6,   
 living_room_speakers =  { 0: 0.3,    1: 0.3,    2: 0.3,    3: 0.3,    4: 0.3,    5: 0.3,    6: 0.3,    7: 0.3,    8: 0.6,    9: 0.6,   10: 0.6,   11: 0.6,
                          12: 0.6,   13: 0.6,   14: 0.6,   15: 0.6,   16: 0.6,   17: 0.6,   18: 0.6,   19: 0.6,   20: 0.6,   21: 0.6,   22: 0.3,   23: 0.3}
 
+main_speakers =         { 0: None,   1: None,   2: None,   3: None,   4: None,   5: None,   6: None,   7: None,   8: None,   9: None,  10: None,  11: None,
+                         12: None,  13: None,  14: None,  15: None,  16: None,  17: None,  18: None,  19: None,  20: None,  21: None,  22: None,  23: None}
+
 
 volumes = {'all_my_speakers':       (all_my_speakers, []),
            'bedroom_mini':          (bedroom_mini, []),
            'bedroom_speakers':      (bedroom_speakers, ['all_my_speakers']),
-           'computer_speakers':     (computer_speakers, ['all_my_speakers', 'kitchen_speakers']),
-           'kitchen_home':          (kitchen_home, ['all_my_speakers', 'kitchen_speakers']),
+           'computer_speakers':     (computer_speakers, ['all_my_speakers', 'kitchen_speakers', 'main_speakers']),
+           'kitchen_home':          (kitchen_home, ['all_my_speakers', 'kitchen_speakers', 'main_speakers']),
            'kitchen_speakers':      (kitchen_speakers, []),
-           'living_room_speakers':  (living_room_speakers, ['all_my_speakers'])}
+           'living_room_speakers':  (living_room_speakers, ['all_my_speakers', 'main_speakers']),
+           'main_speakers':         (main_speakers, [])}
 
 
 if data.get('entity_id') is not None:
@@ -42,6 +46,8 @@ if data.get('entity_id') is not None:
         cast_names = ['bedroom_speakers', 'computer_speakers', 'kitchen_home', 'living_room_speakers']
     elif cast_name == 'kitchen_speakers':
         cast_names = ['computer_speakers', 'kitchen_home']
+    elif cast_name == 'main_speakers':
+        cast_names = ['computer_speakers', 'kitchen_home', 'living_room_speakers']
     else:
         cast_names = [cast_name]
 
@@ -71,4 +77,3 @@ for cast_name in cast_names:
                 if set_volume:
                     hass.services.call('media_player', 'volume_set', {'entity_id': entity_id, 'volume_level': volume})
                     hass.services.call('input_number', 'set_value', {'entity_id': 'input_number.' + cast_name, 'value': int(100 * volume)})
-

@@ -2,7 +2,7 @@
   alias: "CCA: Group unavailable"
   trigger:
   - platform: state
-    entity_id: media_player.all_my_speakers, media_player.kitchen_speakers
+    entity_id: media_player.all_my_speakers, media_player.kitchen_speakers, media_player.main_speakers
     to: 'unavailable'
     for:
       minutes: 2

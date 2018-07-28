@@ -1,7 +1,3 @@
-# https://community.home-assistant.io/t/chromecast-radio-with-station-and-player-selection/12732/237
-# https://www.reddit.com/r/homeassistant/comments/6b002l/help_with_chromecast_audio_automation_constant/
-# https://community.home-assistant.io/t/need-help-with-volume-slider/18903/2
-
 - id: track_volume_individual
   alias: "CCA: Track volume (individual)"
   trigger:

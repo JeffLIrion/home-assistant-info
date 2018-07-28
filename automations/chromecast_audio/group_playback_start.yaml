@@ -4,9 +4,15 @@
   alias: "CCA: Group playback (start)"
   trigger:
   - platform: state
-    entity_id: media_player.all_my_speakers, media_player.kitchen_speakers
+    entity_id: media_player.all_my_speakers, media_player.kitchen_speakers, media_player.main_speakers
     from: 'off'
+  condition:
+  - condition: template
+    value_template: "{{ trigger.to_state.state in ['idle', 'paused', 'playing'] }}"
   action:
-  - service: python_script.sync_chromecast_volumes
+  - service: python_script.cca_sync_chromecast_volumes
     data:
       entity_id: "{{ trigger.entity_id }}"
+  - condition: template
+    value_template: "{{ trigger.to_state.entity_id in ['media_player.all_my_speakers', 'media_player.main_speakers'] }}"
+  - service: script.cca_living_room_speakers_start
