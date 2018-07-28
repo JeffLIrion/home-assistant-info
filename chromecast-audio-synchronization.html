@@ -36,7 +36,7 @@
 <p>I have 3 Chromecast Audio devices, plus a Google Home and a Google Home Mini.  Group playback is awesome… when all my speakers are playing at the same volume.  Unfortunately, the volume levels can get out of sync due to</p>
 <ol>
 <li>Keeping my Google Home at a louder volume than my Chromecast Audio devices (so that I can hear what Google says).</li>
-<li>Playing music on a group that includes my Google home, then telling Google “louder” or “softer”, which will change the volume of the Google Home but not the other group members.</li>
+<li>Playing music on a group that includes my Google Home, then telling Google “louder” or “softer”, which will change the volume of the Google Home but not the other group members.</li>
 <li>Playing music on 1 or more devices and changing the volume level, then later playing music on a group which includes those devices.</li>
 </ol>
 <p>So I set out to use Home Assistant to ensure that when casting to a group, all speakers remain at the same volume.</p>
@@ -255,6 +255,21 @@ main_speakers:
               {{ states('input_number.kitchen_speakers') | round(0) }}
           {% endif %}
       icon_template: &quot;{% if is_state('media_player.kitchen_speakers', 'off') or is_state('media_player.kitchen_speakers', 'unavailable') %}mdi:cast{% else %}mdi:cast-connected{% endif %}&quot;
+
+    main_speakers:
+      friendly_name: &quot;Main Speakers&quot;
+      entity_id:
+      - media_player.main_speakers
+      - input_number.computer_speakers
+      - input_number.living_room_speakers
+      - input_number.main_speakers
+      value_template: &gt;
+          {% if is_state('media_player.main_speakers', 'off') %}
+              {{ ( float(states('input_number.computer_speakers')) + float(states('input_number.living_room_speakers')) ) | multiply(0.5) | round(0) }}
+          {% else %}
+              {{ states('input_number.main_speakers') | round(0) }}
+          {% endif %}
+      icon_template: &quot;{% if is_state('media_player.main_speakers', 'off') or is_state('media_player.main_speakers', 'unavailable') %}mdi:cast{% else %}mdi:cast-connected{% endif %}&quot;
 </code></pre>
 <h2><a id="1d_Setup_summary_242"></a>1d. Setup summary</h2>
 <p>Naming is important!  At this point, for every Chromecast audio group you will have the following in Home Assistant:</p>
@@ -296,9 +311,6 @@ main_speakers:
   - service: python_script.cca_sync_chromecast_volumes
     data:
       entity_id: &quot;{{ trigger.entity_id }}&quot;
-  - condition: template
-    value_template: &quot;{{ trigger.to_state.entity_id in ['media_player.all_my_speakers', 'media_player.main_speakers'] }}&quot;
-  - service: script.cca_living_room_speakers_start
 </code></pre>
 <h2><a id="2c_Update_the_group_volume_trackers_when_a_group_is_playing_299"></a>2c. Update the group volume trackers when a group is playing</h2>
 <p>I need an automation that will update my trackers (i.e., <code>input_number.&lt;group_object_id&gt;</code>) for the group volumes when they are NOT playing by averaging the volumes of their members, excluding the Kitchen Home.  Using my <code>sensor.all_my_speakers</code>, <code>sensor.kitchen_speakers</code>, and <code>sensor.main_speakers</code> template sensors, defined above, this is pretty easy (see <a href="./automations/chromecast_audio/group_volumes.yaml">group_volumes.yaml</a>):</p>
@@ -331,9 +343,6 @@ main_speakers:
   - service: python_script.cca_set_chromecast_volumes
     data:
       entity_id: media_player.kitchen_home
-  - condition: template
-    value_template: &quot;{{ trigger.to_state.entity_id in ['media_player.all_my_speakers', 'media_player.main_speakers'] }}&quot;
-  - service: script.cca_living_room_speakers_stop
 </code></pre>
 <h1><a id="3_Complicated_automations_344"></a>3. Complicated automations</h1>
 <p>Now for the hard part!  I need to define two automations.  For both automations, the trigger is a change in the state of a Chromecast Audio group media player, and their first condition is that the media player volume is not equal to the tracker volume.  The difference is in their second condition:</p>

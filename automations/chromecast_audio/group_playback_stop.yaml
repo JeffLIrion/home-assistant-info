@@ -13,6 +13,3 @@
   - service: python_script.cca_set_chromecast_volumes
     data:
       entity_id: media_player.kitchen_home
-  - condition: template
-    value_template: "{{ trigger.to_state.entity_id in ['media_player.all_my_speakers', 'media_player.main_speakers'] }}"
-  - service: script.cca_living_room_speakers_stop

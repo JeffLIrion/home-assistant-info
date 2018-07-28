@@ -3,7 +3,7 @@
 I have 3 Chromecast Audio devices, plus a Google Home and a Google Home Mini.  Group playback is awesome... when all my speakers are playing at the same volume.  Unfortunately, the volume levels can get out of sync due to
 
 1. Keeping my Google Home at a louder volume than my Chromecast Audio devices (so that I can hear what Google says).
-2. Playing music on a group that includes my Google home, then telling Google "louder" or "softer", which will change the volume of the Google Home but not the other group members.
+2. Playing music on a group that includes my Google Home, then telling Google "louder" or "softer", which will change the volume of the Google Home but not the other group members.
 3. Playing music on 1 or more devices and changing the volume level, then later playing music on a group which includes those devices.
 
 So I set out to use Home Assistant to ensure that when casting to a group, all speakers remain at the same volume.
@@ -237,6 +237,21 @@ I also defined sensors to display these volumes, with the icon indicating whethe
               {{ states('input_number.kitchen_speakers') | round(0) }}
           {% endif %}
       icon_template: "{% if is_state('media_player.kitchen_speakers', 'off') or is_state('media_player.kitchen_speakers', 'unavailable') %}mdi:cast{% else %}mdi:cast-connected{% endif %}"
+
+    main_speakers:
+      friendly_name: "Main Speakers"
+      entity_id:
+      - media_player.main_speakers
+      - input_number.computer_speakers
+      - input_number.living_room_speakers
+      - input_number.main_speakers
+      value_template: >
+          {% if is_state('media_player.main_speakers', 'off') %}
+              {{ ( float(states('input_number.computer_speakers')) + float(states('input_number.living_room_speakers')) ) | multiply(0.5) | round(0) }}
+          {% else %}
+              {{ states('input_number.main_speakers') | round(0) }}
+          {% endif %}
+      icon_template: "{% if is_state('media_player.main_speakers', 'off') or is_state('media_player.main_speakers', 'unavailable') %}mdi:cast{% else %}mdi:cast-connected{% endif %}"
 ```
 
 
@@ -291,9 +306,6 @@ The next step was to create an automation that would synchronize the volume leve
   - service: python_script.cca_sync_chromecast_volumes
     data:
       entity_id: "{{ trigger.entity_id }}"
-  - condition: template
-    value_template: "{{ trigger.to_state.entity_id in ['media_player.all_my_speakers', 'media_player.main_speakers'] }}"
-  - service: script.cca_living_room_speakers_start
 ```
 
 
@@ -336,9 +348,6 @@ I also need an automation to set my Google Home volume back to baseline when pla
   - service: python_script.cca_set_chromecast_volumes
     data:
       entity_id: media_player.kitchen_home
-  - condition: template
-    value_template: "{{ trigger.to_state.entity_id in ['media_player.all_my_speakers', 'media_player.main_speakers'] }}"
-  - service: script.cca_living_room_speakers_stop
 ```
 
 
