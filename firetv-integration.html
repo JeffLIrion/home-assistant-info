@@ -20,84 +20,51 @@
           <a id="repo_banner" href="https://github.com/JeffLIrion/home-assistant-info">View this repo</a>
 
           <h1 id="project_title">Home Assistant Info</h1>
-          <h2 id="project_tagline">Fire TV integration in Hass.io</h2>
+          <h2 id="project_tagline">Fire TV integration in Home Assistant</h2>
         </header>
     </div>
-    
+
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
 
+<p>I’ve got 2 Fire TV sticks that I can control via Home Assistant, both of which require authentication for ADB connections.  Here’s how I got them setup and integrated into Home Assistant.</p>
+<ol>
+<li>
+<p>Download <a href="https://developer.android.com/studio/releases/platform-tools.html">platform-tools</a> and connect to the first Fire TV stick from my laptop, following the instructions in this guide: <a href="https://developer.amazon.com/zh/docs/fire-tv/connecting-adb-to-device.html">Connecting to Fire TV Through adb</a>.</p>
+<p><strong>Important!</strong>  You must check the box that says “always allow connections from this device.” ADB authentication in Home Assistant will only work using a trusted key.</p>
+</li>
+<li>
+<p>Connect to the second Fire TV device, following the same steps as before.  It should utilize the same ADB key.</p>
+</li>
+<li>
+<p>Copy the <code>adbkey</code> and <code>adbkey.pub</code> files from my computer (in the folder <code>~/.android</code>) to my Home Assistant configuration folder.</p>
+</li>
+<li>
+<p>Copy <a href="https://github.com/JeffLIrion/homeassistant_native_firetv/blob/master/media_player/firetv.py">firetv.py</a> to the <code>custom_components/media_player/</code> folder in my Home Assistant configuration directory.</p>
+</li>
+<li>
+<p>Add the Fire TV sticks to my Home Assistant configuration as follows:</p>
+<pre><code class="language-yaml">media_player:
+- platform: firetv
+  name: Fire TV 1
+  host: 192.168.0.111
+  adbkey: &quot;/config/android/adbkey&quot;
 
-<p>I’ve got 2 Fire TV sticks that I can control via Home Assistant.  Here’s how I got them setup and stable in Hass.io.</p>
-<p>I used gollo’s firetv-server addon from here: <a class="reference external" href="http://github.com/gollo/hassio-addons">http://github.com/gollo/hassio-addons</a>.  My addon configuration looks like this:</p>
-<div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">{</span>
-  <span class="nt">&quot;devices&quot;</span><span class="p">:</span> <span class="p">[</span>
-    <span class="p">{</span>
-      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;bedroom&quot;</span><span class="p">,</span>
-      <span class="nt">&quot;host&quot;</span><span class="p">:</span> <span class="s2">&quot;x.x.x.x&quot;</span><span class="p">,</span>
-      <span class="nt">&quot;port&quot;</span><span class="p">:</span> <span class="mi">5555</span>
-    <span class="p">},</span>
-    <span class="p">{</span>
-      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;livingroom&quot;</span><span class="p">,</span>
-      <span class="nt">&quot;host&quot;</span><span class="p">:</span> <span class="s2">&quot;x.x.x.x&quot;</span><span class="p">,</span>
-      <span class="nt">&quot;port&quot;</span><span class="p">:</span> <span class="mi">5555</span>
-    <span class="p">}</span>
-  <span class="p">]</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>My Home Assistant configuration looks like:</p>
-<div class="literal-block-wrapper docutils container" id="id1">
-<div class="code-block-caption"><span class="caption-text"><strong>configuration.yaml</strong></span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
-<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">media_player</span><span class="p p-Indicator">:</span>
-<span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">firetv</span>
-  <span class="l l-Scalar l-Scalar-Plain">host</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span>
-  <span class="l l-Scalar l-Scalar-Plain">port</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">5556</span>
-  <span class="l l-Scalar l-Scalar-Plain">device</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">bedroom</span>
-  <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Fire TV (Bedroom)</span>
+- platform: firetv
+  name: Fire TV 2
+  host: 192.168.0.222
+  adbkey: &quot;/config/android/adbkey&quot;
 
-<span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">firetv</span>
-  <span class="l l-Scalar l-Scalar-Plain">host</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span>
-  <span class="l l-Scalar l-Scalar-Plain">port</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">5556</span>
-  <span class="l l-Scalar l-Scalar-Plain">device</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">livingroom</span>
-  <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Fire TV (Living Room)</span>
-</pre></div>
-</div>
-</div>
-<p>The problem is that the Fire TV server will occasionally crash.  To fix this, I created an automation that will restart the addon when the server crashes.  First, I defined a sensor to track error messages from the addon, like this:</p>
-<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">sensor</span><span class="p p-Indicator">:</span>
-<span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">command_line</span>
-  <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">firetv</span>
-  <span class="l l-Scalar l-Scalar-Plain">command</span><span class="p p-Indicator">:</span> <span class="s">&quot;grep</span><span class="nv"> </span><span class="s">-o</span><span class="nv"> </span><span class="s">&#39;Update</span><span class="nv"> </span><span class="s">for</span><span class="nv"> </span><span class="s">media_player\\.fire_tv_.*room</span><span class="nv"> </span><span class="s">fails&#39;</span><span class="nv"> </span><span class="s">/config/home-assistant.log</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">wc</span><span class="nv"> </span><span class="s">-l&quot;</span>
-</pre></div>
-</div>
-<p>Next, I created an automation that is triggered when this sensor’s value changes.  Since the addon has a hyphen in its name, using <code class="docutils literal"><span class="pre">hassio.addon_restart</span></code> doesn’t work, so I had to define a rest command instead:</p>
-<div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text"><strong>configuration.yaml</strong></span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
-<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">rest_command</span><span class="p p-Indicator">:</span>
-  <span class="l l-Scalar l-Scalar-Plain">firetv_server_restart</span><span class="p p-Indicator">:</span>
-    <span class="l l-Scalar l-Scalar-Plain">url</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">http://hassio/addons/d63e7be5_firetv-server/restart</span>
-    <span class="l l-Scalar l-Scalar-Plain">method</span><span class="p p-Indicator">:</span> <span class="s">&#39;post&#39;</span>
-</pre></div>
-</div>
-</div>
-<p>With this in place, I defined the automation as follows:</p>
-<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">firetv_server_restart</span>
-  <span class="l l-Scalar l-Scalar-Plain">alias</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">FireTV Server Restart</span>
-  <span class="l l-Scalar l-Scalar-Plain">trigger</span><span class="p p-Indicator">:</span>
-  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">platform</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">state</span>
-    <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">sensor.firetv</span>
-  <span class="l l-Scalar l-Scalar-Plain">action</span><span class="p p-Indicator">:</span>
-  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">rest_command.firetv_server_restart</span>
-  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">automation.turn_off</span>
-    <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">automation.firetv_server_restart</span>
-  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">delay</span><span class="p p-Indicator">:</span> <span class="s">&#39;00:05:00&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">service</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">automation.turn_on</span>
-    <span class="l l-Scalar l-Scalar-Plain">entity_id</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">automation.firetv_server_restart</span>
-</pre></div>
-</div>
-<p>And that’s it!  The two Fire TV sticks are successfully integrated into Home Assistant, and the server will restart whenever it crashes.</p>
+# if your Fire TV doesn't require authentication, you would set it up like this
+- platform: firetv
+  name: Fire TV 3
+  host: 192.168.0.123
+</code></pre>
+</li>
+</ol>
+<p>That’s it!  No addons to worry about, and no need for automations to restart the addon when it crashes.</p>
+
 </div>
 
 
